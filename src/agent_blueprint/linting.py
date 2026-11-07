@@ -474,6 +474,16 @@ def _lint_contract_usage(spec: BlueprintSpec) -> list[LintFinding]:
         consumed_state_fields.update(spec.output.schema_def.keys())
     for contract in spec.contracts.nodes.values():
         consumed_state_fields.update(contract.requires)
+    # Low-confidence escalation reads the node's "confidence" update in the
+    # generated runtime (templates/langgraph/nodes.py.j2,
+    # _apply_low_confidence_escalation). The field name is hardcoded there and
+    # the read is skipped unless both the target and the threshold are set.
+    if (
+        spec.policies is not None
+        and spec.policies.escalation.on_low_confidence is not None
+        and spec.policies.escalation.confidence_threshold is not None
+    ):
+        consumed_state_fields.add("confidence")
 
     for node_id, contract in spec.contracts.nodes.items():
         for field_name in contract.produces:
